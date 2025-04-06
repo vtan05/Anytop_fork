@@ -8,11 +8,11 @@ Please visit our [**webpage**](https://anytop2025.github.io/Anytop-page/) for mo
 
 
 ## Release Timeline
-✅  May 6, 2025 – Training & inference code & preprocessing code
+✅ April 6, 2025 – Training & inference code & preprocessing code
 
 📌 April 12, 2025 – Pretrained models & processed dataset 
 
-📌 April 19, 2025 – Motion editing & DIFT feature correspondence code
+📌 April 26, 2025 – Motion editing & DIFT feature correspondence code
 
 📌 May 10, 2025 – Evaluation & rendering code
 
