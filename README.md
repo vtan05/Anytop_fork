@@ -71,11 +71,7 @@ python -m utils.process_new_skeleton --object_name Chicken --bvh_dir assets/True
 ```
 
 The code will create the following under save_dir:
-save_dir/
-        |_motions
-        |_animations
-        |_bvhs
-        cond.npy
+<pre> ``` save_dir/ ├── motions/ ├── animations/ ├── bvhs/ └── cond.npy ``` </pre>
 1. In motions directory, you will find npy files, which are the processed motion features of each bvh file. 
 This is useful in case you would like to use this data for training.  Note that motions longer than 240 frames wil be splited into separate npy files (this statement holds for the following outputs as well). 
 2. In animation directory, you will find mp4 files corresponding to each of the processed bvhs.  
