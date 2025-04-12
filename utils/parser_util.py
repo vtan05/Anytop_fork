@@ -9,7 +9,6 @@ def parse_and_load_from_model(parser):
     # args according to the loaded model
     # do not try to specify them from cmd line since they will be overwritten
     add_model_options(parser)
-    add_diffusion_options(parser)
     args = parser.parse_args()
     args_to_overwrite = []
     for group_name in ['dataset', 'model', 'diffusion']:
@@ -64,8 +63,6 @@ def add_base_options(parser):
     group.add_argument("--device", default=0, type=int, help="Device id to use.")
     group.add_argument("--seed", default=10, type=int, help="For fixing random seed.")
     group.add_argument("--batch_size", default=16, type=int, help="Batch size during training.")
-
-def add_diffusion_options(parser):
     group = parser.add_argument_group('diffusion')
     group.add_argument("--noise_schedule", default='cosine', choices=['linear', 'cosine'], type=str,
                        help="Noise schedule type")
@@ -250,7 +247,6 @@ def train_args():
     add_base_options(parser)
     add_data_options(parser)
     add_model_options(parser)
-    add_diffusion_options(parser)
     add_training_options(parser)
     return parser.parse_args()
 

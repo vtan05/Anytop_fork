@@ -11,7 +11,6 @@ FOOT_CONTACT_HEIGHT_THRESH = 0.3
 FOOT_CONTACT_VEL_THRESH = 0.002
 MAX_PATH_LEN = 5.
 COSMETICS = ["PolarBearB", "KingCobra", "Hamster", "Skunk", "Comodoa", "Hippopotamus", "Leapord", "Rhino", "Hound"]
-SNAKES = ["KingCobra", "Anaconda"]
 NO_HANDS = ["Raptor", "Anaconda"]
 NO_BVHS =["Jaws", "Crow", "Dog", "Dog-2"]
 IGNORE_OBJECTS = NO_BVHS

@@ -8,13 +8,12 @@ Please visit our [**webpage**](https://anytop2025.github.io/Anytop-page/) for mo
 
 
 ## Release Timeline
-✅ April 6, 2025 – Training & inference code & preprocessing code
 
-📌 April 12, 2025 – Pretrained models & processed dataset 
-
-📌 April 26, 2025 – Motion editing & DIFT feature correspondence code
-
-📌 May 10, 2025 – Evaluation & rendering code
+✅ April 6, 2025 – Training & inference code & preprocessing code  
+✅ April 12, 2025 – Pretrained models  
+📌 April 26, 2025 – Motion editing & DIFT feature correspondence code  
+📌 May 10, 2025 – Evaluation & rendering code  
+📌 Processed dataset temporarily withheld due to licensing clarification
 
 ## Getting started
 
@@ -32,36 +31,86 @@ conda activate anytop
 pip install git+https://github.com/inbar-2344/Motion.git
 ```
 
-### 2. Download Truebones dataset
-
-Parse Truebone data yourself, using out prepocessing script:
-(a) Download the full dataset [here](https://truebones.gumroad.com/l/skZMC) 
-(b) Place Truebone_Z-OO dirctory in our repository, under ./datasets/
-(c) Execute the following 
+### 2. Download and Preprocess Truebones dataset
+Due to ongoing licensing clarification, we are currently not planning to publish the processed dataset. 
+However, we provide everything you need to process it yourself using our preprocessing script:
+(a) Download the full dataset from the [official Truebones website](https://truebones.gumroad.com/l/skZMC) 
+(b) Place the Truebone_Z-OO directory inside our repository under ./datasets/treubones/zoo/
+(c) Run the following command to begin preprocessing:
 ```shell
-python -m data_loaders/truebones/truebones_utils/create_dataset.py
+python -m utils.create_dataset
+```
+Note: The preprocessing may take several hours to complete, primarily due to inverse kinematics calculations and the generation of .mp4 files for each motion sequence.
+
+### 3. Download Pretraind Models and dataset dependencies
+Download pretrained models to ./save dorectory py running the following command:
+```shell
+python -m utils.download_dependencies
 ```
 
+## Preprocessing new skeleton 
+In addition to providing the preprocessing code for the full Truebones dataset, we also guide you through applying our pipeline to in-the-wild skeletons from any source-not just Truebones. This is useful for adapting new skeletons to our system, whether for inference on unseen characters or for training with alternative datasets.
+While the preprocessing code was designed to be as generic and adaptable as possible, some skeleton-specific adjustments may still be required, as the pipeline was originally tailored to Truebones. For instance, it uses indicative joint name substrings for foot classification and predefined velocity/height thresholds for foot contact detection-heuristics that have worked well in our experiments with Truebones.
+That said, we've tested the pipeline on BVH files from Mixamo and other sources to ensure its generalizability across different skeleton formats.
+
+The script accepts the following input Arguments:
+*object_name* - A character's indicative name (e.g., "Dog"). If the skeleton you wish to process is outside of Truebones dataset, 
+please make sure the object name you choose does not already exist in Truebones charachters names. 
+All of Truebones characters names can be found in Truebones_skeletons.txt file. 
+*bvh_dir* - Directory containing BVH files of the skeleton. More files improve statistical accuracy for motion denormalization.
+*face_joints_names* - Four joints defining skeleton orientation ([right hip, left hip, right shoulder, left shoulder] or equivalent). 
+Used to align the skeleton to Z+ and XZ plane. Accepts joints names rather than indices since joints indices might change at loading.
+*save_dir* - Output directory.
+*tpos_bvh* - A BVH file of the character's natural rest pose for meaningful rotation learning. 
+If missing, the code will search for a good candidate pose from the provided BVH files. 
+
+Finally, you can run the command: 
+
+```shell
+python -m utils.process_new_skeleton --object_name Chicken --bvh_dir assets/Truebones_Chicken --save_dir dataset/truebones/zoo/Chicken --face_joints_names Bip01_R_Thigh Bip01_L_Thigh BN_Finger_R_01 BN_Finger_L_01 --tpos_bvh assets/Truebones_Chicken/Chicken_TPOSE.bvh
+```
+
+The code will create the following under save_dir:
+save_dir/
+        |_motions
+        |_animations
+        |_bvhs
+        cond.npy
+1. In motions directory, you will find npy files, which are the processed motion features of each bvh file. 
+This is useful in case you would like to use this data for training.  Note that motions longer than 240 frames wil be splited into separate npy files (this statement holds for the following outputs as well). 
+2. In animation directory, you will find mp4 files corresponding to each of the processed bvhs.  
+This is a good sanity check that everything worked as expected. 
+Note that face_joints_names are marked in blue and feet joints that are considered touching the ground are marked in green.
+3. In bvhs dir you can find the processed bvhs (with the new orientation, scale etc.)
+4. cond.npy contains the skeletons representation, including joints names ambeddings and graph conditions, which is a required input for motion synthesis. 
+       
+       
 ## Motion Synthesis
 
 ### Generate motion for skeleton from Truebones dataset
 We categorize Truebones skeletons into five subsets: Bipeds, Quadrupeds, Millipeds, Snakes, and Flying Creatures.
 In addition to a unified model trained on the entire dataset, we also trained specialized models for each subset (with Millipeds and Snakes grouped together).
 
-The explicit skeleton-to-subset mapping is defined in
-./data_loaders/truebones/truebones_utils/param_utils.py
+The explicit skeleton-to-subset mapping and skeletons object_type is defined in dataset/truebones/zoo/Truebones_skeletons.txt
 (see the lists: BIPEDS, QUADROPEDS, FLYING, and MILLIPEDS+SNAKES).
 
-To generate motion for a specific skeleton (object_type) from the Truebones dataset, run:
+If you'd like to synthesize motion using our pre-trained models, ensure that all model checkpoint files are located in the ./save directory (this should already be the case if you've completed Step 3: Download Pretrained Models).
+
+For example, to generate motion using models trained on flying objects, you can synthesize motion for one or more skeletons from the Flying subset using the following command:
 
 ```shell
-python -m sample.generate  --model_path <save/model_name/model_checkpoint.pt> --object_type <object_type> --num_repetitions 3
+python -m sample.generate  --model_path save/flying_model_dataset_truebones_bs_16_latentdim_128/model000279999.pt --object_type Parrot2 Bat --num_repetitions 3
+```
+As the code is fully generic, you can generate motion for unseen skeletons (that do not belong to the subset the model was trained on) using the exact same syntax. 
+For example, you can explore synthesizing motions for the Ostrich skeleton using the FLYING subset model:
+```shell
+python -m sample.generate  --model_path save/flying_model_dataset_truebones_bs_16_latentdim_128/model000279999.pt --object_type Ostrich --num_repetitions 3
 ```
 
 ### Generate unseen skeleton outside of Truebones dataset
 We support motion synthesis for skeletons outside of Truebones dataset, provided as bvh file/s. 
 To do that, you must first run our pre-processing pipeline on the new skeleton to create cond.py file for the skeleton, as described in 
-BVH to Skeleton section below. conce you've accomplish this part, you can synthesize motion of the new skeleton by running the command:
+Preprocessing new skeleton section above. Once you've accomplish this part, you can synthesize motion of the new skeleton by running the command:
 
 ```shell
 python -m sample.generate  --model_path <model_path> --object_type <skeleton_name> --num_repetitions 3 --cond_path <path_to_cond_npy_file>
@@ -69,16 +118,16 @@ python -m sample.generate  --model_path <model_path> --object_type <skeleton_nam
 
 **You may also define:**
 * `--device` id.
-* `--seed` to sample different prompts.
+* `--seed` to sample different seeds.
 * `--motion_length` (text-to-motion only) in seconds (maximum is 9.8[sec]).
 
 **Running those will get you:**
 
 * `<object_type>_rep_<rep_id>_#<sample_id>.npy` file with xyz positions of the generated animation
 * `<object_type>_rep_<rep_id>_#<sample_id>.mp4` a stick figure animation for each generated motion
-* `<object_type>_rep_<rep_id>_#<sample_id>.npy` bvh file of the generated motion
+* `<object_type>_rep_<rep_id>_#<sample_id>.bvh` bvh file of the generated motion
 
-It will look something like this:
+Stick figure animation looks something like this:
 
 ![example]( assets/smaller_stick_fig.gif )
 
@@ -115,43 +164,6 @@ python -m train.train_anytop --model_prefix flying --objects_subset flying --lam
 * Use `--device` to define GPU id.
 * Add `--train_platform_type {WandBPlatform, TensorboardPlatform}` to track results with either [WandB](https://wandb.ai/site/) or [Tensorboard](https://www.tensorflow.org/tensorboard).
 
-
-## Process BVH out of Truebones dataset
-We provide a preprocessing code for skeletons outside the Truebones dataset. 
-While designed to be as generic as possible, some skeleton-specific adjustments may be needed since it 
-was originally tailored for Truebones. For example, it relies on joint names for foot classification 
-and specific velocity/height thresholds for foot contact detection. However, we have tested it on BVH 
-files from Mixamo and other sources to ensure its generalizability.
-
-Input Arguments:
-object_name - A character's indicative name (e.g., "Dog").
-bvh_dir - Directory containing BVH files of the skeleton. More files improve statistical accuracy for motion denormalization.
-face_joints - Four joints defining skeleton orientation ([right hip, left hip, right shoulder, left shoulder] or equivalent). 
-            Used to align the skeleton to Z+ and XZ plane.
-save_dir - Output directory.
-tpos_bvh - A BVH file of the character's natural rest pose for meaningful rotation learning. 
-        If missing, the code selects a pose from the provided BVH files. 
-
-Finally, you can run the command: 
-
-```shell
-python -m data_loaders/truebones/truebones_utils/process_new_skeleton --object_name <skeleton_name> --bvh_dir <path_to_bvhs_dir> --save_dir <save_dir> --face_joints_names [right_hip_joint, left_hip_joint, right_shoulder_joint, left_shoulder_joint] --tpos_bvh <tpos_path>
-        
-```       
-Output:
-The code will create the following under save_dir:
-save_dir/
-        |_motions
-        |_animations
-        |_bvhs
-        cond.npy
-1. In motions directory, you will find npy files, which are the processed motion features of each bvh file. 
-This is useful in case you would like to use this data for training. 
-2. In animation directory, you will find mp4 files corresponding to each of the processed bvhs. 
-This is a good sanity check that everything worked as expected. 
-Note that face_joints are marked in blue and feet joints are marked in green.
-3.In bvhs dir you can find the processed bvhs
-4. cond.npy contains the skeletons representation, including joints names ambeddings and graph conditions,
 
 ## Acknowledgments
 We want to thank the following contributors that our code is based on:

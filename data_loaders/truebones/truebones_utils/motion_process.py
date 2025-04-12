@@ -343,6 +343,11 @@ def process_object(object_type, files_counter, frames_counter, max_joints, squar
     ## get t-pos bvh
     if t_pos_path is None:
         t_pos_path = find_tpos_path(bvh_files)
+    else: 
+        # removes tpos bvh fron bvh_files, as it represents a static motion and should be used only for
+        # extracting common characteristics. If this is not the case, disable this part
+        bvh_files.remove(t_pos_path)
+        
     root_pose_init_xz, scale_factor, ground_height, offsets, foot_indices, tpos_rots, names, tpos_anim, face_joints = get_common_features_from_T_pose(t_pos_path, object_type, face_joints=face_joints)
     t_pos_motion, parents, max_joints, new_anim = get_motion(tpos_anim, FOOT_CONTACT_VEL_THRESH, object_type, max_joints, root_pose_init_xz, scale_factor, ground_height, offsets, foot_indices, tpos_rots, squared_positions_error, face_joints=face_joints)
     object_cond['tpos_first_frame'] = t_pos_motion[0]
@@ -501,11 +506,12 @@ def recover_from_bvh_rot_np(data, parents, offsets):
     for j, p in enumerate(parents[1:], 1):
         cont6d_params[:, p] = cont6d_params_hml_order[:, j]
     rotations = Quaternions.from_transforms(cont6d_params)
+    rotations[:, 0] = -r_rot_quat * rotations[:, 0]
     positions = offsets[None].repeat(data.shape[0], axis=0)
     positions[:, 0] = r_pos
     anim = Animation(rotations=rotations, positions=positions, parents=parents, offsets=offsets, orients=Quaternions.id(0))
     
-    return positions_global(anim)
+    return positions_global(anim), anim
 
 ################################################################
 
@@ -702,7 +708,7 @@ def process_single_object_type(object_type, save_dir):
     np.save(pjoin(save_dir, "cond.npy"), cond)
     
     
-def process_new_object(object_name, bvh_dir, face_joints, save_dir, tpos_bvh=None):
+def process_skeleton(object_name, bvh_dir, face_joints, save_dir, tpos_bvh=None):
     ## prepare
     os.makedirs(pjoin(save_dir, MOTION_DIR), exist_ok=True)
     os.makedirs(pjoin(save_dir, ANIMATIONS_DIR), exist_ok=True)
