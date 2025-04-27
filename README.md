@@ -51,7 +51,7 @@ python -m utils.create_dataset
 Note: The preprocessing may take several hours to complete, primarily due to inverse kinematics calculations and the generation of .mp4 files for each motion sequence.
 
 ### 3. Download Pretraind Models and dataset dependencies
-Download pretrained models to ./save dorectory py running the following command:
+Download pretrained models to ./save dorectory by running the following command:
 ```shell
 python -m utils.download_dependencies
 ```
