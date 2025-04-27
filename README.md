@@ -6,14 +6,22 @@ Please visit our [**webpage**](https://anytop2025.github.io/Anytop-page/) for mo
 
 ![teaser](https://github.com/Anytop2025/Anytop-page/blob/main/static/videos/anytop_teaser/teaser.gif)
 
+## Update Notice
+
+📢 April 27, 2025 – New models uploaded (minor bug fix) — Update your model paths.  
+📢 April 27, 2025 – New cond.npy uploaded — Override your local file if you have already created the dataset.
+  * To handle both updates above, simply remove the current cond.npy file from your dataset directory and re-run "Download Pretrained Models and Dataset Dependencies."
+
+📢 April 27, 2025 – Joints & Temporal Correspondence code uploaded— Try them out!
 
 ## Release Timeline
 
 ✅ April 6, 2025 – Training & inference code & preprocessing code  
 ✅ April 12, 2025 – Pretrained models  
-📌 April 26, 2025 – Motion editing & DIFT feature correspondence code  
-📌 May 10, 2025 – Evaluation & rendering code  
-📌 Processed dataset temporarily withheld due to licensing clarification
+✅ April 27, 2025 – Motion editing & DIFT feature correspondence code  
+📌 *(Processed dataset temporarily withheld due to licensing clarification)*
+
+📌 May 30, 2025 – Editing, evaluation and rendering code
 
 ## Getting started
 
@@ -71,13 +79,11 @@ python -m utils.process_new_skeleton --object_name Chicken --bvh_dir assets/True
 ```
 
 The code will create the following under save_dir:
-```
 save_dir/
-├── motions/
-├── animations/
-├── bvhs/
-└── cond.npy
-```
+        |_motions
+        |_animations
+        |_bvhs
+        cond.npy
 1. In motions directory, you will find npy files, which are the processed motion features of each bvh file. 
 This is useful in case you would like to use this data for training.  Note that motions longer than 240 frames wil be splited into separate npy files (this statement holds for the following outputs as well). 
 2. In animation directory, you will find mp4 files corresponding to each of the processed bvhs.  
@@ -101,12 +107,12 @@ If you'd like to synthesize motion using our pre-trained models, ensure that all
 For example, to generate motion using models trained on flying objects, you can synthesize motion for one or more skeletons from the Flying subset using the following command:
 
 ```shell
-python -m sample.generate  --model_path save/flying_model_dataset_truebones_bs_16_latentdim_128/model000279999.pt --object_type Parrot2 Bat --num_repetitions 3
+python -m sample.generate  --model_path save/flying_model_dataset_truebones_bs_16_latentdim_128/model000229999.pt --object_type Parrot2 Bat --num_repetitions 3
 ```
 As the code is fully generic, you can generate motion for unseen skeletons (that do not belong to the subset the model was trained on) using the exact same syntax. 
 For example, you can explore synthesizing motions for the Ostrich skeleton using the FLYING subset model:
 ```shell
-python -m sample.generate  --model_path save/flying_model_dataset_truebones_bs_16_latentdim_128/model000279999.pt --object_type Ostrich --num_repetitions 3
+python -m sample.generate  --model_path save/flying_model_dataset_truebones_bs_16_latentdim_128/model000229999.pt --object_type Tyranno --num_repetitions 3
 ```
 
 ### Generate unseen skeleton outside of Truebones dataset
@@ -166,6 +172,37 @@ python -m train.train_anytop --model_prefix flying --objects_subset flying --lam
 * Use `--device` to define GPU id.
 * Add `--train_platform_type {WandBPlatform, TensorboardPlatform}` to track results with either [WandB](https://wandb.ai/site/) or [Tensorboard](https://www.tensorflow.org/tensorboard).
 
+## Correspondence
+We release our correspondence code for both joint-level and temporal matching.
+### Joints Correspondence
+Our joint correspondence module finds, for each joint in a target skeleton, its best matching joint in a reference skeleton.
+For better visualization, we color the joints of the Monkey skeleton (used as the reference).
+
+The script accepts one or more motions from the Truebones processed dataset as input and computes joint correspondences to a reference Monkey motion.
+Note: The motion you choose for the target skeleton can affect the resulting correspondences.
+
+```shell
+python -m sample.dift_correspondence --dift_type spatial --model_path save/all_model_dataset_truebones_bs_16_latentdim_128/model000459999.pt --sample_tgt assets/Scorpion___SlowForward_837.npy
+```
+Running this will create a new directory dift_out under the model’s directory, where the joint correspondences are saved as both .npy and .mp4 files (for visualization).
+The output looks like:
+<div style="text-align: left; margin-top: 20px;">
+<img src="assets/Monkey_Scorpion_spatial_corr.gif" width="400"/>
+</div>
+
+### Temporal Correspondence
+Our temporal correspondence module matches each frame of a target motion to its most similar frame in a reference motion.
+For better visualization, we also provide a segmentation of frames from a Monkey motion as the reference.
+
+To test it on target skeletons from the Truebones processed dataset, run:
+
+```shell
+python -m sample.dift_correspondence --dift_type temporal --model_path save/all_model_dataset_truebones_bs_16_latentdim_128/model000459999.pt --sample_tgt assets/Hound___Attack_470.npy --layer 3 --timestep 1
+```
+This will also create a dift_out directory under the model’s directory, saving the temporal correspondences as both .npy and .mp4 files. The output looks like:
+<div style="text-align: left; margin-top: 20px;">
+<img src="assets/Monkey_Hound_temporal_corr.gif" width="400"/>
+</div>
 
 ## Acknowledgments
 We want to thank the following contributors that our code is based on:
