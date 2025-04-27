@@ -18,7 +18,7 @@ Please visit our [**webpage**](https://anytop2025.github.io/Anytop-page/) for mo
 
 ✅ April 6, 2025 – Training & inference code & preprocessing code  
 ✅ April 12, 2025 – Pretrained models  
-✅ April 27, 2025 – Motion editing & DIFT feature correspondence code  
+✅ April 27, 2025 – DIFT feature correspondence code  
 📌 *(Processed dataset temporarily withheld due to licensing clarification)*
 
 📌 May 30, 2025 – Editing, evaluation and rendering code
