@@ -1,6 +1,6 @@
 import torch 
 import torch.nn as nn
-from typing import Optional, Union, Callable
+from typing import Optional, Union, Callable, Tuple
 from torch import Tensor
 import torch.nn.functional as F
 from torch.nn import MultiheadAttention
@@ -49,7 +49,7 @@ class GraphMultiHeadAttention(nn.Module):
 
         q = q.transpose(1, 2)  # [b, h, q_len, d_k]
         v = v.transpose(1, 2)  # [b, h, v_len, d_v]
-        k = k.transpose(1, 2)  # [b, h, d_k, k_len]
+        k = k.transpose(1, 2)  # [b, h, k_len, d_k]
 
         sequence_length = v.shape[2]
         num_hop_types = query_hop_emb.shape[0]
@@ -136,24 +136,24 @@ class GraphMotionDecoder(nn.TransformerDecoder):
         super().__init__(decoder_layer, num_layers, norm)
         
         self.d_model = decoder_layer.d_model
-        self.topology_key_emb = nn.Embedding(max_path_len + 2, self.d_model) # 'far': max_path_len + 1
+        self.topology_key_emb = nn.Embedding(max_path_len + 1, self.d_model) # 'far': max_path_len + 1
         self.edge_key_emb = nn.Embedding(6, self.d_model) # 'self':0, 'parent':1, 'child':2, 'sibling':3, 'no_relation':4, 'end_effector':5
-        self.topology_query_emb = nn.Embedding(max_path_len + 2, self.d_model) # 'far': max_path_len + 1
+        self.topology_query_emb = nn.Embedding(max_path_len + 1, self.d_model) # 'far': max_path_len + 1
         self.edge_query_emb = nn.Embedding(6, self.d_model) # 'self':0, 'parent':1, 'child':2, 'sibling':3, 'no_relation':4, 'end_effector':5
         self.value_emb_flag = value_emb
         if value_emb:
-            self.topology_value_emb = nn.Embedding(max_path_len + 2, self.d_model) # 'far': max_path_len + 1
+            self.topology_value_emb = nn.Embedding(max_path_len + 1, self.d_model) # 'far': max_path_len + 1
             self.edge_value_emb = nn.Embedding(6, self.d_model) # 'self':0, 'parent':1, 'child':2, 'sibling':3, 'no_relation':4, 'end_effector':5
         
 
         
     def forward(self, tgt: Tensor, timesteps_embs: Tensor, memory: Tensor, spatial_mask:  Optional[Tensor] = None,
                 temporal_mask: Optional[Tensor] = None, tgt_key_padding_mask: Optional[Tensor] = None,
-                memory_key_padding_mask: Optional[Tensor] = None, y=None, get_activations=False) -> Tensor:
+                memory_key_padding_mask: Optional[Tensor] = None, y=None, get_layer_activation=-1) -> Union[Tensor , Tuple[Tensor, dict]]:
         topology_rel = y['graph_dist'].long().to(tgt.device)
         edge_rel = y['joints_relations'].long().to(tgt.device)
         output = tgt
-        if get_activations:
+        if get_layer_activation > -1 and get_layer_activation < self.num_layers:
             activations=dict()
         for layer_ind, mod in enumerate(self.layers):
             edge_value_emb = None
@@ -164,11 +164,11 @@ class GraphMotionDecoder(nn.TransformerDecoder):
             output = mod(
                     output, timesteps_embs, topology_rel, edge_rel, self.edge_key_emb, self.edge_query_emb, edge_value_emb, self.topology_key_emb, self.topology_query_emb, topology_value_emb, spatial_mask, temporal_mask, 
                     tgt_key_padding_mask, memory_key_padding_mask, y)
-            if get_activations:
+            if layer_ind == get_layer_activation:
                 activations[layer_ind] = output.clone()
         if self.norm is not None:
             output = self.norm(output)
-        if get_activations:
+        if get_layer_activation > -1 and get_layer_activation < self.num_layers:
             return output, activations
         return output
 

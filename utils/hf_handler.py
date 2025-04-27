@@ -22,11 +22,19 @@ def link_checkpoints(src_dir, dst_dir):
     for subdir in all_subdirs:
         if not os.path.exists(os.path.join(dst_dir, subdir)):
             os.symlink(os.path.join(src_dir, subdir), os.path.join(dst_dir, subdir))
-            
+
+def get_all_files(directory):
+    files = []
+    for root, dirs, file_list in os.walk(directory):
+        for file in file_list:
+            relative_file_path = os.path.relpath(os.path.join(root, file), start=directory)
+            files.append(relative_file_path)
+    return files
+
 def link_data(src_dir, dst_dir):
     assert os.path.isdir(src_dir)
     os.makedirs(dst_dir, exist_ok=True)
-    all_subdirs = [subdir for subdir in os.listdir(src_dir) if os.path.isdir(os.path.join(src_dir, subdir))]
-    for subdir in all_subdirs:
-        if not os.path.exists(os.path.join(dst_dir, subdir)):
-            os.symlink(os.path.join(src_dir, subdir), os.path.join(dst_dir, subdir))
+    all_files = get_all_files(src_dir)
+    for f in all_files:
+        if not os.path.exists(os.path.join(dst_dir, f)):
+            os.symlink(os.path.join(src_dir, f), os.path.join(dst_dir, f))

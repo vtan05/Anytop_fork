@@ -91,11 +91,11 @@ def main(args = None, cond_dict = None):
             motion = motion.cpu().permute(2, 0, 1).numpy() * std + mean
             offsets = cond_dict[object_type]['offsets']
             global_positions = recover_from_bvh_ric_np(motion)
+            #global_positions, out_anim = recover_from_bvh_rot_np(motion, parents, offsets)
             out_anim, _1, _2 = animation_from_positions(positions=global_positions, parents=parents, offsets=offsets, iterations=150)
             name_pref = '%s_rep_%d'%(object_type, rep_i)
             existing_npy_files = [filename for filename in os.listdir(out_path) if filename.startswith(name_pref) and filename.endswith('.npy')]
             existing_mp4_files = [filename for filename in os.listdir(out_path) if filename.startswith(name_pref) and filename.endswith('.mp4')]
-
             npy_name = name_pref+'_#%d.npy'%(len(existing_npy_files))
             mp4_name = name_pref+'_#%d.mp4'%(len(existing_mp4_files))
             bvh_name = name_pref+'_#%d.bvh'%(len(existing_mp4_files))
@@ -119,8 +119,9 @@ def create_condition(object_types, cond_dict, n_frames, temporal_window, t5_cond
         n_joints = len(parents)
         mean = cond_dict[object_type]['mean']
         std = cond_dict[object_type]['std']
-        std[std==0.] = 1.
         tpos_first_frame = cond_dict[object_type]['tpos_first_frame']
+        tpos_first_frame =  (tpos_first_frame - mean) / (std + 1e-6)
+        tpos_first_frame = np.nan_to_num(tpos_first_frame)
         joint_relations = cond_dict[object_type]['joint_relations']
         joints_graph_dist = cond_dict[object_type]['joints_graph_dist']
         offsets = cond_dict[object_type]['offsets']

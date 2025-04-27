@@ -319,7 +319,7 @@ class GaussianDiffusion:
         return posterior_mean, posterior_variance, posterior_log_variance_clipped
 
     def p_mean_variance(
-        self, model, x, t, clip_denoised=True, denoised_fn=None, model_kwargs=None, get_activations=False
+        self, model, x, t, clip_denoised=True, denoised_fn=None, model_kwargs=None, get_layer_activation=-1
     ):
         """
         Apply the model to get p(x_{t-1} | x_t), as well as a prediction of
@@ -346,8 +346,8 @@ class GaussianDiffusion:
 
         B, C = x.shape[:2]
         assert t.shape == (B,)
-        if get_activations:
-            model_output, activations = model(x, self._scale_timesteps(t), get_activations=get_activations, **model_kwargs)
+        if get_layer_activation > -1 and get_layer_activation < model.model.num_layers :
+            model_output, activations = model(x, self._scale_timesteps(t), get_layer_activation=get_layer_activation, **model_kwargs)
         else:
             model_output = model(x, self._scale_timesteps(t), **model_kwargs)
             
@@ -427,7 +427,7 @@ class GaussianDiffusion:
         assert (
             model_mean.shape == model_log_variance.shape == pred_xstart.shape == x.shape
         )
-        if get_activations:
+        if get_layer_activation > -1 and get_layer_activation < model.model.num_layers:
             return {
                 "mean": model_mean,
                 "variance": model_variance,
@@ -613,6 +613,7 @@ class GaussianDiffusion:
         cond_fn=None,
         model_kwargs=None,
         const_noise=False,
+        get_layer_activation = -1
     ):
         """
         Sample x_{t-1} from the model at the given timestep.
@@ -638,7 +639,7 @@ class GaussianDiffusion:
             clip_denoised=clip_denoised,
             denoised_fn=denoised_fn,
             model_kwargs=model_kwargs,
-            get_activations=True
+            get_layer_activation=get_layer_activation
         )
         noise = th.randn_like(x)
         # print('const_noise', const_noise)
@@ -656,7 +657,10 @@ class GaussianDiffusion:
         # print('log_variance', out["log_variance"].shape, out["log_variance"])
         # print('nonzero_mask', nonzero_mask.shape, nonzero_mask)
         sample = out["mean"] + nonzero_mask * th.exp(0.5 * out["log_variance"]) * noise
-        return {"sample": sample, "pred_xstart": out["pred_xstart"], "activations": out["activations"]}
+        if get_layer_activation > -1:
+            return {"sample": sample, "pred_xstart": out["pred_xstart"], "activations": out["activations"]}
+        else:
+            return {"sample": sample, "pred_xstart": out["pred_xstart"]}
     
     def p_sample_with_grad(
         self,
@@ -723,7 +727,7 @@ class GaussianDiffusion:
         cond_fn_with_grad=False,
         dump_steps=None,
         const_noise=False,
-        get_activations=False
+        get_activations={"layer": -1, "timestep": -1},
     ):
         """
         Generate samples from the model.
@@ -749,7 +753,7 @@ class GaussianDiffusion:
         if dump_steps is not None:
             dump = []
         activations_dict=dict()
-        sample_loop = self.p_sample_loop_for_dift if get_activations else self.p_sample_loop_progressive
+        sample_loop = self.p_sample_loop_progressive
         for i, sample in enumerate(sample_loop(
             model,
             shape,
@@ -764,21 +768,88 @@ class GaussianDiffusion:
             init_image=init_image,
             randomize_class=randomize_class,
             cond_fn_with_grad=cond_fn_with_grad,
-            const_noise=const_noise
+            const_noise=const_noise,
         )):
-            if get_activations:
-                activations_dict[i] = sample["activations"]
-                
+            final = sample
             if dump_steps is not None and i in dump_steps:
                 dump.append(deepcopy(sample["sample"]))
-            final = sample
             
         if dump_steps is not None:
             return dump
-        if get_activations:
-            return final["sample"], activations_dict 
         return final["sample"]
 
+    def p_sample_single_timestep(
+        self,
+        model,
+        shape,
+        noise=None,
+        clip_denoised=True,
+        denoised_fn=None,
+        cond_fn=None,
+        model_kwargs=None,
+        device=None,
+        init_image=None,
+        randomize_class=False,
+        const_noise=False,
+        get_activations={"layer": -1, "timestep": -1},
+    ):
+        """
+        Generate samples from the model.
+
+        :param model: the model module.
+        :param shape: the shape of the samples, (N, C, H, W).
+        :param t: diffusion timestep.
+        :param noise: if specified, the noise from the encoder to sample.
+                      Should be of the same shape as `shape`.
+        :param clip_denoised: if True, clip x_start predictions to [-1, 1].
+        :param denoised_fn: if not None, a function which applies to the
+            x_start prediction before it is used to sample.
+        :param cond_fn: if not None, this is a gradient function that acts
+                        similarly to the model.
+        :param model_kwargs: if not None, a dict of extra keyword arguments to
+            pass to the model. This can be used for conditioning.
+        :param device: if specified, the device to create the samples on.
+                       If not specified, use a model parameter's device.
+        :param progress: if True, show a tqdm progress bar.
+        :param const_noise: If True, will noise all samples with the same noise throughout sampling
+        :return: a non-differentiable batch of samples.
+        """
+        activations_dict=dict()
+        if device is None:
+            device = next(model.parameters()).device
+        assert isinstance(shape, (tuple, list))
+        if noise is None:
+            noise = th.randn(*shape, device=device)
+        img = th.randn(*shape, device=device)
+        t = get_activations["timestep"]
+        t_tnsr = th.tensor([t] * shape[0], device=device)
+        if init_image is not None:
+            # randomize the initial image to timestep t for dift extractrion
+            img = self.q_sample(init_image, t_tnsr, noise)
+        if randomize_class and 'y' in model_kwargs:
+            model_kwargs['y'] = th.randint(low=0, high=model.num_classes,
+                                            size=model_kwargs['y'].shape,
+                                            device=model_kwargs['y'].device)
+        with th.no_grad():
+            out = self.p_sample_dift(
+                model,
+                img,
+                t_tnsr,
+                clip_denoised=clip_denoised,
+                denoised_fn=denoised_fn,
+                cond_fn=cond_fn,
+                model_kwargs=model_kwargs,
+                const_noise=const_noise,
+                get_layer_activation=get_activations["layer"]
+            )
+            
+            if get_activations["timestep"] == t:
+                activations_dict[t] = out["activations"]
+        
+        if get_activations["timestep"] == t:
+            return out["sample"], activations_dict 
+        return out["sample"]
+    
     def p_sample_loop_progressive(
         self,
         model,
@@ -795,7 +866,7 @@ class GaussianDiffusion:
         randomize_class=False,
         cond_fn_with_grad=False,
         const_noise=False,
-        activations_dict=None# dummy
+        get_activations=None# dummy
     ):
         """
         Generate samples from the model and yield intermediate samples from
@@ -864,7 +935,9 @@ class GaussianDiffusion:
         init_image=None,
         randomize_class=False,
         cond_fn_with_grad=False,
-        const_noise=False
+        const_noise=False,
+        get_activations={"layer": -1, "timestep": -1}
+        
     ):
         """
         Generate samples from the model and yield intermediate samples from
@@ -878,18 +951,9 @@ class GaussianDiffusion:
             device = next(model.parameters()).device
         assert isinstance(shape, (tuple, list))
         if noise is not None:
-            img = noise
-        else:
-            img = th.randn(*shape, device=device)
-
-        if skip_timesteps and init_image is None:
-            init_image = th.zeros_like(img)
-
+            noise = th.randn(*shape, device=device)
+        img = th.randn(*shape, device=device)
         indices = list(range(self.num_timesteps - skip_timesteps))[::-1]
-        if init_image is not None:
-            my_t = th.ones([shape[0]], device=device, dtype=th.long) * indices[0]
-            img = self.q_sample(init_image, my_t, img)
-
         if progress:
             # Lazy import so that we don't depend on tqdm.
             from tqdm.auto import tqdm
@@ -897,7 +961,14 @@ class GaussianDiffusion:
             indices = tqdm(indices)
 
         for i in indices:
+            get_layer_activation = -1
+            if get_activations["timestep"] == i:
+                get_layer_activation = get_activations["layer"]
             t = th.tensor([i] * shape[0], device=device)
+            if init_image is not None:
+                # randomize the initial image to timestep t for dift extractrion
+                img = self.q_sample(init_image, t, noise)
+                
             if randomize_class and 'y' in model_kwargs:
                 model_kwargs['y'] = th.randint(low=0, high=model.num_classes,
                                                size=model_kwargs['y'].shape,
@@ -913,6 +984,7 @@ class GaussianDiffusion:
                     cond_fn=cond_fn,
                     model_kwargs=model_kwargs,
                     const_noise=const_noise,
+                    get_layer_activation = get_layer_activation
                 )
                 yield out
                 img = out["sample"]
@@ -1112,7 +1184,7 @@ class GaussianDiffusion:
         ):
             final = sample
         return final["sample"]
-
+    
     def ddim_sample_loop_progressive(
         self,
         model,

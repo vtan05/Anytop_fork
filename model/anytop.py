@@ -60,7 +60,7 @@ class AnyTop(nn.Module):
         
         self.output_process = OutputProcess(self.feature_len, self.root_input_feats, self.max_joints, self.latent_dim)
 
-    def forward(self, x, timesteps, get_activations=False, y=None):
+    def forward(self, x, timesteps, get_layer_activation=-1, y=None):
         """
         x: [batch_size, njoints, nfeats, max_frames], denoted x_t in the paper
         timesteps: [batch_size] (int)
@@ -78,12 +78,13 @@ class AnyTop(nn.Module):
         temporal_mask = 1.0 - temp_mask.repeat(1, njoints, self.num_heads, 1, 1).reshape(-1, nframes + 1, nframes + 1).float()
         spatial_mask[spatial_mask == 1.0] = -1e9
         temporal_mask[temporal_mask == 1.0] = -1e9
-        output = self.seqTransDecoder(tgt=x, timesteps_embs=timesteps_emb, memory=None, spatial_mask=spatial_mask, temporal_mask = temporal_mask, y=y, get_activations=get_activations)
-        if get_activations:
+        
+        output = self.seqTransDecoder(tgt=x, timesteps_embs=timesteps_emb, memory=None, spatial_mask=spatial_mask, temporal_mask = temporal_mask, y=y, get_layer_activation=get_layer_activation)
+        if get_layer_activation > -1 and get_layer_activation < self.num_layers:
             activations = output[1]
             output=output[0]
         output = self.output_process(output) # Applies linear layer on each frame to convert it back to feature len dim
-        if get_activations:
+        if get_layer_activation > -1 and get_layer_activation < self.num_layers:
             return output, activations
         return output
 

@@ -576,7 +576,7 @@ def remove_joints_augmentation(data, removal_rate, mean, std):
     if object_type in ['KingCobra', 'Anaconda']:
         possible_feet=[]
     removal_options = [j for j in ee if j not in possible_feet]
-    removal_rate = min(1.0, (removal_rate*len(parents)) / len(removal_options))
+    # removal_rate = min(1.0, (removal_rate*len(parents)) / len(removal_options))
     remove_joints = sorted(random.sample(removal_options, math.floor(len(removal_options) * removal_rate)), reverse=True)
     motion = np.delete(motion, remove_joints, axis=1)
     new_ee = [parents[j] for j in remove_joints if np.count_nonzero(parents == parents[j]) == 1]
@@ -746,11 +746,6 @@ def process_skeleton(object_name, bvh_dir, face_joints, save_dir, tpos_bvh=None)
     np.save(pjoin(save_dir, "cond.npy"), cond)
 ################################################################
 
-    
-    
-    
-    
-    
     
         
         

@@ -177,57 +177,25 @@ def add_generate_options(parser):
 def add_dift_options(parser):
     # bvhs_dir, sample_bvh, face_joints, save_dir=None, tpos_bvh=None
     group = parser.add_argument_group('dift')
-    group.add_argument("--apply_pca", action='store_true',
-                       help="apply pca on feats before calculating similarity.")
-    group.add_argument("--seen_ref", action='store_true',
-                       help="ref topology is seen.")
-    group.add_argument("--seen_tgt", action='store_true',
-                       help="tgt topology is seen.")    
-    group.add_argument("--bvhs_dir_ref", default='', type=str,
-                       help="bvhs dir ref.")
-    group.add_argument("--sample_ref", default='/home/dcor/inbargat1/multi-skeleton-mdm/dataset/truebones/zoo/processed/motions/Ostrich___Attack_548.npy', type=str,
+    # group.add_argument("--apply_pca", action='store_true',
+    #                    help="apply pca on feats before calculating similarity.")
+    group.add_argument("--sample_ref", default='assets/Monkey___B2Attack_574.npy', type=str,
                        help="sample bvh ref.")
-    group.add_argument("--object_type_ref", default='Ostrich', type=str,
-                       help="object type ref.")
-    group.add_argument("--tpos_bvh_ref", default='', type=str,
-                       help="tpos bvh ref.")
-    group.add_argument("--face_joints_ref", default=[1, 2, 3, 4], type=int, nargs='+',
-                       help="face joints of reference sample.")
-    group.add_argument("--bvhs_dir_tgt", default='', type=str,
-                       help="bvhs dir tgt.")
-    group.add_argument("--sample_tgt", default='/home/dcor/inbargat1/multi-skeleton-mdm/dataset/truebones/zoo/processed/motions/Dragon___Fly_272.npy', type=str,
+    group.add_argument("--sample_tgt", default=['assets/Scorpion___SlowForward_837.npy'], type=str, nargs='+',
                        help="sample bvh tgt.")
-    group.add_argument("--object_type_tgt", default='Dragon', type=str,
-                       help="object type tgt.")
-    group.add_argument("--tpos_bvh_tgt", default='', type=str,
-                       help="tpos bvh tgt.")
-    group.add_argument("--face_joints_tgt", default=[1, 2, 3, 4], type=int, nargs='+',
-                       help="face joints of target sample.")
     group.add_argument("--tmp_save_dir", default='', type=str,
                        help="temporal save dir.")
+    group.add_argument("--suffix", default='', type=str,
+                       help="file suffix.")
     group.add_argument("--dift_type", default='spatial', choices=['spatial', 'temporal'], type=str,
                        help="apply dift on spatial or temporal features")
-
-def add_pca_options(parser):
-    # bvhs_dir, sample_bvh, face_joints, save_dir=None, tpos_bvh=None
-    group = parser.add_argument_group('pca')
-    group.add_argument("--seen", action='store_true',
-                       help="topology is seen.")
-    group.add_argument("--bvhs_dir", default='', type=str,
-                       help="bvhs dir.")
-    group.add_argument("--sample", default='/home/dcor/inbargat1/multi-skeleton-mdm/dataset/truebones/zoo/processed/motions/Ostrich___Attack_548.npy', type=str,
-                       help="sample bvh/npy (depends if seen or unseen).")
-    group.add_argument("--object_type", default='Ostrich', type=str,
-                       help="object type.")
-    group.add_argument("--tpos_bvh", default='', type=str,
-                       help="tpos bvh.")
-    group.add_argument("--face_joints", default=[1, 2, 3, 4], type=int, nargs='+',
-                       help="face joints of sample.")
-    group.add_argument("--tmp_save_dir", default='', type=str,
-                       help="temporal save dir.")
-    group.add_argument("--k", default=5, type=int,
-                       help="Number of centroids for k-means centroids")
-       
+    group.add_argument("--layer", default=0, type=int,
+                       help="Layer to extract DIFT features from.")
+    group.add_argument("--timestep", default=90, type=int,
+                       help="Timestep to extract DIFT features from.")
+    group.add_argument("--cond_path", default='', type=str,
+                       help="provide cond.py path in case you wish to generate motion for skeleton not included in Truebones dataset.")
+    
 def add_evaluation_options(parser):
         group = parser.add_argument_group('ata_eval')
         group.add_argument("--eval_mode", required=True, type=str, choices=['bvh', 'npy_rot', 'npy_loc'], help="Path to gt dir.")

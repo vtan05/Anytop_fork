@@ -113,7 +113,6 @@ class MotionDataset(data.Dataset):
             aug_type = random.choice([0, 1])
         mean = self.cond_dict[object_type]['mean']
         std = self.cond_dict[object_type]['std']
-        std[std == 0] = 1.0 # avoid division by 0 
         if aug_type == 0: #no augmentation
             return data['motion'], data['length'], data['object_type'], data['parents'], data['joints_graph_dist'], data['joints_relations'], data['tpos_first_frame'], data['offsets'], data['joints_names_embs'], data['kinematic_chains'], mean, std
         elif aug_type == 1: # remove_joints
@@ -132,14 +131,14 @@ class MotionDataset(data.Dataset):
             idx = self.pointer + item
         data = self.data_dict[self.name_list[idx]]
         motion, m_length, object_type, parents, joints_graph_dist, joints_relations, tpos_first_frame, offsets, joints_names_embs, kinematic_chains, mean, std = self.augment(data)
-
         "Z Normalization"
         # Normalize all coords but rotations 
         std += 1e-6 # for stability
         motion = (motion - mean[None, :]) / std[None, :]
         motion = np.nan_to_num(motion)
         ind = 0
-        
+        tpos_first_frame =  (tpos_first_frame - mean) / std
+        tpos_first_frame = np.nan_to_num(tpos_first_frame)
         if m_length < self.max_motion_length:
             motion = np.concatenate([motion,
                                      np.zeros((self.max_motion_length - m_length, motion.shape[1], motion.shape[2]))
