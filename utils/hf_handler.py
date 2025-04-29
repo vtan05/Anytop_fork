@@ -36,5 +36,8 @@ def link_data(src_dir, dst_dir):
     os.makedirs(dst_dir, exist_ok=True)
     all_files = get_all_files(src_dir)
     for f in all_files:
-        if not os.path.exists(os.path.join(dst_dir, f)):
-            os.symlink(os.path.join(src_dir, f), os.path.join(dst_dir, f))
+        file_path = os.path.join(dst_dir, f)
+        if not os.path.exists(file_path):
+            dir_path = os.path.dirname(file_path)
+            os.makedirs(dir_path, exist_ok=True)
+            os.symlink(os.path.join(src_dir, f), file_path)
