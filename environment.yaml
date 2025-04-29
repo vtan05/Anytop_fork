@@ -1,4 +1,4 @@
-name: anytop_test
+name: anytop
 channels:
   - defaults
   - conda-forge
@@ -102,4 +102,4 @@ dependencies:
       - urllib3==2.2.3
       - wasabi==0.10.1
       - zipp==3.20.2
-prefix: /home/dcor/inbargat1/miniconda3/envs/anytop_new
+prefix: /home/dcor/inbargat1/miniconda3/envs/anytop
