@@ -341,7 +341,7 @@ def process_object(object_type, files_counter, frames_counter, max_joints, squar
     if len(bvh_files) == 0:
         return files_counter, frames_counter, max_joints
     ## get t-pos bvh
-    if t_pos_path is None:
+    if t_pos_path is None or t_pos_path == '':
         t_pos_path = find_tpos_path(bvh_files)
     else: 
         # removes tpos bvh fron bvh_files, as it represents a static motion and should be used only for
