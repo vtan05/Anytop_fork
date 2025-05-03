@@ -274,7 +274,6 @@ def get_mean_std(all_tensors):
 """ compures Relations and Distance marices"""
 def create_topology_edge_relations(parents, max_path_len = 5): # joint j+1 contains len(j, j+1)
     edge_types = {'self':0, 'parent':1, 'child':2, 'sibling':3, 'no_relation':4, 'end_effector':5, 'ts_token_conn': 6}
-    topo_types = {'far': max_path_len + 1, 'ts_token_conn': max_path_len + 2}
     n = len(parents)
     topo_rel = np.zeros((n, n))
     edge_rel = np.ones((n, n)) * edge_types['no_relation'] 
@@ -309,7 +308,7 @@ def create_topology_edge_relations(parents, max_path_len = 5): # joint j+1 conta
         if ee:
             edge_rel[i, i] = edge_types['end_effector']
             
-    topo_rel[topo_rel > max_path_len] = topo_types['far']
+    topo_rel[topo_rel > max_path_len] = max_path_len
     return edge_rel, topo_rel
 
 """ find tpos bvh"""
