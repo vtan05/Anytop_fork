@@ -43,7 +43,7 @@ pip install git+https://github.com/inbar-2344/Motion.git
 Due to ongoing licensing clarification, we are currently not planning to publish the processed dataset. 
 However, we provide everything you need to process it yourself using our preprocessing script:
 (a) Download the full dataset from the [official Truebones website](https://truebones.gumroad.com/l/skZMC) 
-(b) Place the Truebone_Z-OO directory inside our repository under ./datasets/treubones/zoo/
+(b) Place the Truebone_Z-OO directory inside our repository under ./datasets/truebones/zoo/
 (c) Run the following command to begin preprocessing:
 ```shell
 python -m utils.create_dataset
