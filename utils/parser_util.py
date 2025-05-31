@@ -163,6 +163,9 @@ def add_sampling_options(parser):
                             "if loading dataset from file, this field will be ignored.")
     group.add_argument("--num_repetitions", default=3, type=int,
                        help="Number of repetitions, per sample (text prompt/action)")
+    group.add_argument("--cond_path", default='', type=str,
+                       help="provide cond.py path in case you wish to generate motion for skeleton not included in Truebones dataset.")
+    
 
 def add_generate_options(parser):
     group = parser.add_argument_group('generate')
@@ -171,8 +174,6 @@ def add_generate_options(parser):
                             "Maximum is 9.8 for HumanML3D (text-to-motion), and 2.0 for HumanAct12 (action-to-motion)")
     group.add_argument("--object_type", default=['Flamingo'], type=str, nargs='+',
                        help="An object type to be generated. If empty, will generate flamingo :).")
-    group.add_argument("--cond_path", default='', type=str,
-                       help="provide cond.py path in case you wish to generate motion for skeleton not included in Truebones dataset.")
     
 def add_dift_options(parser):
     # bvhs_dir, sample_bvh, face_joints, save_dir=None, tpos_bvh=None
@@ -193,22 +194,38 @@ def add_dift_options(parser):
                        help="Layer to extract DIFT features from.")
     group.add_argument("--timestep", default=90, type=int,
                        help="Timestep to extract DIFT features from.")
-    group.add_argument("--cond_path", default='', type=str,
-                       help="provide cond.py path in case you wish to generate motion for skeleton not included in Truebones dataset.")
+
+
+def add_edit_options(parser):
+    group = parser.add_argument_group('edit')
+    group.add_argument("--edit_mode", default='in_between', choices=['in_between', 'upper_body'], type=str,
+                       help="Defines which parts of the input motion will be edited.\n"
+                            "(1) in_between - suffix and prefix motion taken from input motion, "
+                            "middle motion is generated.\n"
+                            "(2) upper_body - lower body joints taken from input motion, "
+                            "upper body is generated.")
+    group.add_argument("--prefix_end", default=0.25, type=float,
+                       help="For in_between editing - Defines the end of input prefix (ratio from all frames).")
+    group.add_argument("--suffix_start", default=0.75, type=float,
+                       help="For in_between editing - Defines the start of input suffix (ratio from all frames).")
+    group.add_argument("--samples", default=['dataset/truebones/zoo/truebones_processed/motions/Ostrich___Attack_581.npy'], type=str, nargs='+',
+                    help="samples npy")
+    group.add_argument("--object_type", default='Flamingo', type=str,
+                    help="An object type to be generated. If empty, will generate flamingo :).")
+    group.add_argument("--upper_body_root", default=[26], type=int, nargs='+',
+                       help="defines the root joints of the upper body for upper_body editing mode.")
+    group.add_argument("--unique_str", default='', type=str, help="A string to be added to the file name to identify a specific change. Should start with '_'.")
+
+
     
 def add_evaluation_options(parser):
-        group = parser.add_argument_group('ata_eval')
-        group.add_argument("--eval_mode", required=True, type=str, choices=['bvh', 'npy_rot', 'npy_loc'], help="Path to gt dir.")
-        group.add_argument("--benchmark_path", default='ata_eval/benchmark_names.txt', type=str,  help="Path to benchmark character names. If empty, will use all excluding the characters_to_exclude")
-        group.add_argument("--eval_gt_dir", required=True, type=str, help="Path to gt dir.")
+        group = parser.add_argument_group('eval')
+        group.add_argument("--eval_mode", default='npy_loc',type=str, choices=['npy_rot', 'npy_loc'], help="Path to gt dir.")
+        group.add_argument("--benchmark_path", default='eval/benchmarks/benchmark_all.txt', type=str,  help="Path to benchmark character names. If empty, will use all excluding the characters_to_exclude")
+        group.add_argument("--eval_gt_dir", default='dataset/truebones/zoo/truebones_processed/motions', type=str, help="Path to gt dir.")
         group.add_argument("--eval_gen_dir", required=True, type=str, help="Path to gen dir.")
         group.add_argument("--characters_to_exclude", default='MouseyNoFingers,Mousey_m,Trex,SabreToothTiger,Raptor2', type=str, help="Comma separated list of characters to exclude. The default is character with more than 40 motions.")
         group.add_argument("--unique_str", default='', type=str, help="A string to be added to the file name to identify a specific change. Should start with '_'.")
-
-def add_evaluation_stats_options(parser):
-        group = parser.add_argument_group('ata_eval_stats')
-        group.add_argument("--eval_mode", required=True, type=str, choices=['bvh', 'npy_rot', 'npy_loc', 'npy_relative_loc'], help="Path to gt dir.")
-        group.add_argument("--benchmark_path", default='ata_eval/benchmark_names.txt', type=str,  help="Path to benchmark character names. If empty, will use all excluding the characters_to_exclude")
 
 def train_args():
     parser = ArgumentParser()
@@ -257,6 +274,15 @@ def dift_args():
     args = parse_and_load_from_model(parser)
 
     return args
+
+
+def edit_args():
+    parser = ArgumentParser()
+    add_base_options(parser)
+    add_data_options(parser)
+    add_sampling_options(parser)
+    add_edit_options(parser)
+    return parse_and_load_from_model(parser)
 
 def pca_args():
     parser = ArgumentParser()
