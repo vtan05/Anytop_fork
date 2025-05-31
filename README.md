@@ -11,17 +11,17 @@ Please visit our [**webpage**](https://anytop2025.github.io/Anytop-page/) for mo
 📢 April 27, 2025 – New models uploaded (minor bug fix) — Update your model paths.  
 📢 April 27, 2025 – New cond.npy uploaded — Override your local file if you have already created the dataset.
   * To handle both updates above, simply remove the current cond.npy file from your dataset directory and re-run "Download Pretrained Models and Dataset Dependencies."
+📢 May 31, 2025 – Inpainting editing and Evaluation code uploaded — Check it out!
 
-📢 April 27, 2025 – Joints & Temporal Correspondence code uploaded— Check it out!
 
 ## Release Timeline
 
 ✅ April 6, 2025 – Training & inference code & preprocessing code  
 ✅ April 12, 2025 – Pretrained models  
 ✅ April 27, 2025 – DIFT feature correspondence code  
+✅ May 31, 2025 – Editing and evaluation code  
 📌 *(Processed dataset temporarily withheld due to licensing clarification)*
-
-📌 May 30, 2025 – Editing, evaluation and rendering code
+📌 June 1, 2025 – Rendering code
 
 ## Getting started
 
@@ -202,6 +202,31 @@ python -m sample.dift_correspondence --dift_type temporal --model_path save/all_
 This will also create a dift_out directory under the model’s directory, saving the temporal correspondences as both .npy and .mp4 files. The output looks like:
 <div style="text-align: left; margin-top: 20px;">
 <img src="assets/Monkey_Hound_temporal_corr.gif" width="400"/>
+</div>
+
+## Editing
+We support the two modes presented in the paper: in_between and upper_body.
+### In-between 
+```shell
+python -m sample.edit --edit_mode in_between --model_path save/bipeds_model_dataset_truebones_bs_16_latentdim_128/model000329999.pt --object_type Ostrich --samples 'assets/Ostrich___Attack_581.npy' --num_repetitions 3
+```
+* **Optional:**  You can specify how many frames at the beginning and end of each input sample should remain fixed using the --prefix_end and --suffix_start arguments, respectively. By default, prefix_end is set to 0.25 and suffix_start is set to 0.75.
+This means that the first 25% and last 25% of the frames are fixed, while the middle 50% are generated.
+The output format is the same as described in the Motion Synthesis / Correspondence section above.
+The resulting .mp4 file should appear as:
+
+<div style="text-align: left; margin-top: 20px;">
+<img src="assets/In_between_example.gif" width="400"/>
+</div>
+
+### Upper-body
+```shell
+python -m sample.edit --edit_mode upper_body --model_path save/bipeds_model_dataset_truebones_bs_16_latentdim_128/model000329999.pt --object_type Ostrich --samples 'assets/Ostrich___Attack_581.npy' --upper_body_root 26 --num_repetitions 3
+```
+* `--upper_body_root` specifies a list of joint indices that define the roots of the upper body sub-tree in the character's skeleton. By default, it is set to 0, which means the entire skeleton will be generated.
+Output .mp4 file should look something like:
+<div style="text-align: left; margin-top: 20px;">
+<img src="assets/Upper_body_example.gif" width="400"/>
 </div>
 
 ## Acknowledgments

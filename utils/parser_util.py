@@ -208,11 +208,11 @@ def add_edit_options(parser):
                        help="For in_between editing - Defines the end of input prefix (ratio from all frames).")
     group.add_argument("--suffix_start", default=0.75, type=float,
                        help="For in_between editing - Defines the start of input suffix (ratio from all frames).")
-    group.add_argument("--samples", default=['dataset/truebones/zoo/truebones_processed/motions/Ostrich___Attack_581.npy'], type=str, nargs='+',
+    group.add_argument("--samples", default=['assets/Ostrich___Attack_581.npy'], type=str, nargs='+',
                     help="samples npy")
     group.add_argument("--object_type", default='Flamingo', type=str,
                     help="An object type to be generated. If empty, will generate flamingo :).")
-    group.add_argument("--upper_body_root", default=[26], type=int, nargs='+',
+    group.add_argument("--upper_body_root", default=[0], type=int, nargs='+',
                        help="defines the root joints of the upper body for upper_body editing mode.")
     group.add_argument("--unique_str", default='', type=str, help="A string to be added to the file name to identify a specific change. Should start with '_'.")
 

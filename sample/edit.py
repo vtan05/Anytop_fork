@@ -45,7 +45,6 @@ def main(args = None, cond_dict = None):
     # mkdir outpath
     os.makedirs(out_path, exist_ok=True)
     args.batch_size = args.num_samples  # Sampling a single batch from the testset, with exactly args.num_samples
-    # args.num_repetitions = 1
 
     print("Creating model and diffusion...")
     model, diffusion = create_model_and_diffusion_general_skeleton(args)
