@@ -8,7 +8,7 @@ Please visit our [**webpage**](https://anytop2025.github.io/Anytop-page/) for mo
 
 ## Update Notice
 
-📢 May 31, 2025 – Inpainting editing and Evaluation code uploaded — Check it out!
+📢 May 31, 2025 – Inpainting editing and Evaluation code uploaded.
 📢 April 27, 2025 – New models uploaded (minor bug fix) — Update your model paths.  
 📢 April 27, 2025 – New cond.npy uploaded — Override your local file if you have already created the dataset.
   * To handle both updates above, simply remove the current cond.npy file from your dataset directory and re-run "Download Pretrained Models and Dataset Dependencies."
