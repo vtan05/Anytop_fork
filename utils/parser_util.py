@@ -3,7 +3,7 @@ import argparse
 import os
 import json
 import copy
-
+import sys
 
 def parse_and_load_from_model(parser):
     # args according to the loaded model
@@ -217,15 +217,24 @@ def add_edit_options(parser):
     group.add_argument("--unique_str", default='', type=str, help="A string to be added to the file name to identify a specific change. Should start with '_'.")
 
 
-    
+def add_render_options(parser):
+    group = parser.add_argument_group('render')
+    group.add_argument('--bvh_path', type=str, default='assets/Truebones_Chicken', help='path of animation bvh file')
+    group.add_argument('--save_dir', type=str, default='save/render_out', help='')
+    group.add_argument('--scale', type=float, default=0.7, help='')
+    group.add_argument('--cylinder_radius', type=float, default=0.42, help='')
+    group.add_argument('--sphere_radius', type=float, default=0.56, help='')
+    group.add_argument("--subset", default='bipeds', choices=['quadropeds' , 'flying', 'bipeds', 'millipeds_snakes'], type=str, help="Object subset.")
+
+
 def add_evaluation_options(parser):
-        group = parser.add_argument_group('eval')
-        group.add_argument("--eval_mode", default='npy_loc',type=str, choices=['npy_rot', 'npy_loc'], help="Path to gt dir.")
-        group.add_argument("--benchmark_path", default='eval/benchmarks/benchmark_all.txt', type=str,  help="Path to benchmark character names. If empty, will use all excluding the characters_to_exclude")
-        group.add_argument("--eval_gt_dir", default='dataset/truebones/zoo/truebones_processed/motions', type=str, help="Path to gt dir.")
-        group.add_argument("--eval_gen_dir", required=True, type=str, help="Path to gen dir.")
-        group.add_argument("--characters_to_exclude", default='MouseyNoFingers,Mousey_m,Trex,SabreToothTiger,Raptor2', type=str, help="Comma separated list of characters to exclude. The default is character with more than 40 motions.")
-        group.add_argument("--unique_str", default='', type=str, help="A string to be added to the file name to identify a specific change. Should start with '_'.")
+    group = parser.add_argument_group('eval')
+    group.add_argument("--eval_mode", default='npy_loc',type=str, choices=['npy_rot', 'npy_loc'], help="Path to gt dir.")
+    group.add_argument("--benchmark_path", default='eval/benchmarks/benchmark_all.txt', type=str,  help="Path to benchmark character names. If empty, will use all excluding the characters_to_exclude")
+    group.add_argument("--eval_gt_dir", default='dataset/truebones/zoo/truebones_processed/motions', type=str, help="Path to gt dir.")
+    group.add_argument("--eval_gen_dir", required=True, type=str, help="Path to gen dir.")
+    group.add_argument("--characters_to_exclude", default='MouseyNoFingers,Mousey_m,Trex,SabreToothTiger,Raptor2', type=str, help="Comma separated list of characters to exclude. The default is character with more than 40 motions.")
+    group.add_argument("--unique_str", default='', type=str, help="A string to be added to the file name to identify a specific change. Should start with '_'.")
 
 def train_args():
     parser = ArgumentParser()
@@ -284,17 +293,6 @@ def edit_args():
     add_edit_options(parser)
     return parse_and_load_from_model(parser)
 
-def pca_args():
-    parser = ArgumentParser()
-    # args specified by the user: (all other will be loaded from the model)
-    add_base_options(parser)
-    add_data_options(parser)
-    add_sampling_options(parser)
-    add_pca_options(parser)
-    args = parse_and_load_from_model(parser)
-
-    return args
-
 
 def evaluation_parser():
     parser = ArgumentParser()
@@ -302,8 +300,12 @@ def evaluation_parser():
     add_evaluation_options(parser)
     return parser.parse_args()
 
-def evaluation_stats_parser():
+def render_parser():
     parser = ArgumentParser()
-    add_base_options(parser)
-    add_evaluation_stats_options(parser)
-    return parser.parse_args()
+    add_render_options(parser)
+    if "--" not in sys.argv:
+        argv = []
+    else:
+        argv = sys.argv[sys.argv.index("--") + 1:]
+    return parser.parse_args(argv)
+
