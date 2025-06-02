@@ -8,6 +8,7 @@ Please visit our [**webpage**](https://anytop2025.github.io/Anytop-page/) for mo
 
 ## Update Notice
 
+📢 June 2, 2025 – Blender visualization script released.   
 📢 May 31, 2025 – Inpainting editing and Evaluation code uploaded.  
 📢 April 27, 2025 – New models uploaded (minor bug fix) — Update your model paths.  
 📢 April 27, 2025 – New cond.npy uploaded — Override your local file if you have already created the dataset.
@@ -19,9 +20,8 @@ Please visit our [**webpage**](https://anytop2025.github.io/Anytop-page/) for mo
 ✅ April 12, 2025 – Pretrained models  
 ✅ April 27, 2025 – DIFT feature correspondence code  
 ✅ May 31, 2025 – Editing and evaluation code  
-📌 *(Processed dataset temporarily withheld due to licensing clarification)*
-
-📌 June 1, 2025 – Rendering code
+✅ June 2, 2025 – Rendering code  
+📌 *(Processed dataset temporarily withheld due to licensing clarification)*  
 
 ## Getting started
 
@@ -228,6 +228,21 @@ Output .mp4 file should look something like:
 <div style="text-align: left; margin-top: 20px;">
 <img src="assets/Upper_body_example.gif" width="400"/>
 </div>
+
+## Visualizing Motions in Blender
+We provide a script to visualize motion data as animated skeletons in Blender, similar to the figures shown in the paper.
+The script accepts either a single .bvh file or a directory containing multiple .bvh files. For each file, it generates a corresponding .blend file with the skeleton animation rendered in an empty scene.
+**Note**: To export an .mp4 render, you'll need to manually set up lighting and position the camera in the Blender UI.  
+Before running the command below, make sure to install the following dependencies in Blender’s Python environment:
+* git+https://github.com/inbar-2344/Motion.git
+* tqdm
+* scipy
+
+To create visualizations for all .bvh files in assets/Truebones_Chicken, run:
+```shell
+blender -b -P visualization/bvh2skeleton.py -- --bvh_path assets/Truebones_Chicken --save_dir save/blend_files --subset bipeds
+```
+* **Customization** You can adjust the visualization using --sphere_radius (joint sphere radius), --cylinder_radius (bone cylinder radius), and --scale (global scale factor).
 
 ## Acknowledgments
 We want to thank the following contributors that our code is based on:
