@@ -263,14 +263,23 @@ def get_motion(bvh_path, foot_contact_vel_thresh, object_type, max_joints,root_p
         return None, None, max_joints, None
 
 """ computes mean and std for a list of motions """
-def get_mean_std(all_tensors):
-    Mean = all_tensors.mean(axis=0) # (Joints, 13)
-    Std = all_tensors.std(axis=0) # (Joints, 13)
-    if len(Std[:, 12][Std[:, 12]!=0]) > 0:
+def get_mean_std(data):
+    if len(data) > 0:
+        Mean = data.mean(axis=0) # (Joints, 25)
+        Std = data.std(axis=0) # # (Joints, 25)
+        Std[0, :3] = Std[0, :3].mean() / 1.0 # all joints except root ric pos
+        Std[0, 3:9] = Std[0, 3:9].mean() / 1.0 # all joints except root rotation
+        Std[0, 9:12] = Std[0, 9:12].mean() / 1.0 # all joints except root local velocity
+
+        Std[1:, :3] = Std[1:, :3].mean() / 1.0 # all joints except root ric pos
+        Std[1:, 3:9] = Std[1:, 3:9].mean() / 1.0 # all joints except root rotation
+        Std[1:, 9:12] = Std[1:, 9:12].mean() / 1.0 # all joints except root local velocity
+        if len(Std[:, 12][Std[:, 12]!=0]) > 0:
             Std[:, 12][Std[:, 12]!=0] = Std[:, 12][Std[:, 12]!=0].mean() / 1.0 
-    Std[:, 12][Std[:, 12]==0] = 1.0 # replace zeros with ones
-    return Mean, Std   
+        Std[:, 12][Std[:, 12]==0] = 1.0 # replace zeros with ones
         
+        return Mean, Std
+  
 """ compures Relations and Distance marices"""
 def create_topology_edge_relations(parents, max_path_len = 5): # joint j+1 contains len(j, j+1)
     edge_types = {'self':0, 'parent':1, 'child':2, 'sibling':3, 'no_relation':4, 'end_effector':5, 'ts_token_conn': 6}
@@ -744,7 +753,3 @@ def process_skeleton(object_name, bvh_dir, face_joints, save_dir, tpos_bvh=None)
     
     np.save(pjoin(save_dir, "cond.npy"), cond)
 ################################################################
-
-    
-        
-        
