@@ -8,6 +8,9 @@ class MLPlatform:
         self.path, file = os.path.split(save_dir)
         self.name = kwargs.get('name', file)
         pass
+    
+    def watch_model(self, *args, **kwargs):
+        pass
 
     def report_scalar(self, name, value, iteration, group_name=None):
         pass
