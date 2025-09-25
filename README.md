@@ -8,6 +8,7 @@ Please visit our [**webpage**](https://anytop2025.github.io/Anytop-page/) for mo
 
 ## Update Notice
 
+📢 September 25, 2025 – Important bug fix related to dataset preprocessing and handling unseen motions. If you are working with either, please pull the latest commits and rerun the preprocessing procedure.   
 📢 June 2, 2025 – Blender visualization script released.   
 📢 May 31, 2025 – Inpainting editing and Evaluation code uploaded.  
 📢 April 27, 2025 – New models uploaded (minor bug fix) — Update your model paths.  
